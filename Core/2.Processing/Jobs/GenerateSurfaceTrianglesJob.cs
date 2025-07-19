@@ -409,11 +409,16 @@ namespace Chisel.Core
 
                        const double kEpsilon = 1e-6;
 
-                       if (math.abs(area) <= kEpsilon)
+                       var extents = max - min;
+                       var maxDim = math.max(math.abs(extents.x), math.abs(extents.y));
+
+                       if (maxDim <= kEpsilon)
                                return true;
 
-                       return math.abs(max.x - min.x) <= kEpsilon ||
-                                  math.abs(max.y - min.y) <= kEpsilon;
+                       if (math.abs(area) <= (maxDim * maxDim * kEpsilon))
+                               return true;
+
+                       return false;
                }
         }
 }

@@ -389,32 +389,44 @@ namespace Chisel.Core
                 return true;
 
             var verts = hashedVertices;
-            float3 min = verts[(int)edges[0].index1];
-            float3 max = min;
+            float3 first = verts[(int)edges[0].index1];
+            float3 min = first;
+            float3 max = first;
             float3 area = float3.zero;
 
+            float3 prev = first;
             for (int i = 0; i < edges.Length; i++)
             {
-                var v1 = verts[(int)edges[i].index1];
-                var v2 = verts[(int)edges[i].index2];
+                var curr = verts[(int)edges[i].index2];
 
-                min = math.min(min, v1);
-                min = math.min(min, v2);
-                max = math.max(max, v1);
-                max = math.max(max, v2);
+                min = math.min(min, curr);
+                max = math.max(max, curr);
 
-                area += math.cross(v1, v2);
+                area += math.cross(prev, curr);
+                prev = curr;
             }
 
             const float kEpsilon = 1e-6f;
 
-            if (math.lengthsq(area) <= kEpsilon)
+            var extents = max - min;
+            var maxDim = math.cmax(math.abs(extents));
+
+            if (maxDim <= kEpsilon)
                 return true;
 
-            if (math.abs(max.x - min.x) <= kEpsilon ||
-                math.abs(max.y - min.y) <= kEpsilon ||
-                math.abs(max.z - min.z) <= kEpsilon)
+            var areaLen = math.length(area);
+            if (areaLen <= (maxDim * maxDim * kEpsilon))
                 return true;
+
+            var normal = math.normalizesafe(area);
+            var d = math.dot(normal, first);
+            for (int i = 1; i < edges.Length; i++)
+            {
+                var v = verts[(int)edges[i].index1];
+                var dist = math.abs(math.dot(normal, v) - d);
+                if (dist > maxDim * kEpsilon)
+                    return true;
+            }
 
             return false;
         }
