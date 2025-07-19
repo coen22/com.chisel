@@ -133,49 +133,23 @@ namespace Chisel.Core
 		
                 public void RemoveDuplicates()
                 {
-                        var remap = new NativeArray<int>(positions2D.Length, Allocator.Temp);
-                        var newLookup = new NativeList<int>(positions2D.Length, Allocator.Temp);
-                        var newPositions = new NativeList<double2>(positions2D.Length, Allocator.Temp);
-
+                        var cleaned = new NativeList<int>(positions2D.Length, Allocator.Temp);
+                        var used = new NativeArray<bool>(positions2D.Length, Allocator.Temp);
                         for (int i = 0; i < positions2D.Length; i++)
                         {
-                                var pos = positions2D[i];
-                                int found = -1;
-                                for (int j = 0; j < newPositions.Length; j++)
+                                if (!used[i])
                                 {
-                                        if (math.all(pos == newPositions[j]))
-                                        {
-                                                found = j;
-                                                break;
-                                        }
+                                        cleaned.Add(lookup[i]);
+                                        used[i] = true;
                                 }
-
-                                if (found == -1)
-                                {
-                                        remap[i] = newPositions.Length;
-                                        newLookup.Add(lookup[i]);
-                                        newPositions.Add(pos);
-                                }
-                                else
-                                {
-                                        remap[i] = found;
-                                }
-                        }
-
-                        for (int i = 0; i < edgeIndices.Length; i++)
-                        {
-                                edgeIndices[i] = remap[edgeIndices[i]];
                         }
 
                         lookup.Clear();
-                        positions2D.Clear();
-                        lookup.AddRange(newLookup.AsArray());
-                        positions2D.AddRange(newPositions.AsArray());
-
-                        remap.Dispose();
-                        newLookup.Dispose();
-                        newPositions.Dispose();
+                        lookup.AddRange(cleaned.ToArray(Allocator.Temp));
+                        cleaned.Dispose();
+                        used.Dispose();
                 }
+
 
                 public void RemoveUnusedVertices()
                 {
@@ -226,52 +200,68 @@ namespace Chisel.Core
                         if (vertexCount < 3)
                                 return;
 
-                        // For each consecutive pair of vertices, ensure there is an edge
-                        for (int i = 0; i < vertexCount; i++)
+                        var connectionCount = new NativeArray<int>(vertexCount, Allocator.Temp);
+                        for (int i = 0; i < edgeIndices.Length; i += 2)
                         {
-                                int next = (i + 1) % vertexCount;
+                                connectionCount[edgeIndices[i]]++;
+                                connectionCount[edgeIndices[i + 1]]++;
+                        }
 
-                                bool exists = false;
-                                for (int e = 0; e < edgeIndices.Length; e += 2)
+                        for (int v = 0; v < vertexCount; v++)
+                        {
+                                var p1 = positions2D[v];
+                                while (connectionCount[v] < 2)
                                 {
-                                        int e0 = edgeIndices[e];
-                                        int e1 = edgeIndices[e + 1];
-                                        if ((e0 == i && e1 == next) || (e0 == next && e1 == i))
+                                        int best = -1;
+                                        double bestDist = double.MaxValue;
+                                        for (int u = 0; u < vertexCount; u++)
                                         {
-                                                exists = true;
-                                                break;
+                                                if (v == u) continue;
+                                                if (EdgeExists(edgeIndices, v, u)) continue;
+
+                                                var p2 = positions2D[u];
+                                                double dist = math.distancesq(p1, p2);
+                                                if (dist >= bestDist) continue;
+
+                                                bool intersects = false;
+                                                for (int e = 0; e < edgeIndices.Length && !intersects; e += 2)
+                                                {
+                                                        int e0 = edgeIndices[e];
+                                                        int e1 = edgeIndices[e + 1];
+                                                        if (e0 == v || e1 == v || e0 == u || e1 == u)
+                                                                continue;
+                                                        var q1 = positions2D[e0];
+                                                        var q2 = positions2D[e1];
+                                                        if (SegmentsIntersect(p1, p2, q1, q2))
+                                                                intersects = true;
+                                                }
+                                                if (intersects) continue;
+                                                best = u;
+                                                bestDist = dist;
                                         }
-                                }
-
-                                if (exists)
-                                        continue;
-
-                                // Check if the new edge would intersect any existing edge
-                                var p1 = positions2D[i];
-                                var q1 = positions2D[next];
-                                bool intersects = false;
-                                for (int e = 0; e < edgeIndices.Length && !intersects; e += 2)
-                                {
-                                        int e0 = edgeIndices[e];
-                                        int e1 = edgeIndices[e + 1];
-
-                                        // Skip edges that share a vertex with the candidate edge
-                                        if (e0 == i || e1 == i || e0 == next || e1 == next)
-                                                continue;
-
-                                        var p2 = positions2D[e0];
-                                        var q2 = positions2D[e1];
-                                        if (SegmentsIntersect(p1, q1, p2, q2))
-                                                intersects = true;
-                                }
-
-                                if (!intersects)
-                                {
-                                        edgeIndices.Add(i);
-                                        edgeIndices.Add(next);
+                                        if (best == -1)
+                                                break;
+                                        edgeIndices.Add(v);
+                                        edgeIndices.Add(best);
+                                        connectionCount[v]++;
+                                        connectionCount[best]++;
                                 }
                         }
+                        connectionCount.Dispose();
                 }
+
+                static bool EdgeExists(NativeList<int> edges, int a, int b)
+                {
+                        for (int i = 0; i < edges.Length; i += 2)
+                        {
+                                int e0 = edges[i];
+                                int e1 = edges[i + 1];
+                                if ((e0 == a && e1 == b) || (e0 == b && e1 == a))
+                                        return true;
+                        }
+                        return false;
+                }
+
 
 		// Helper function to check if point q lies on segment pr (assuming p, q, r are collinear)
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
