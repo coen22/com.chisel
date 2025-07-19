@@ -226,8 +226,18 @@ namespace Chisel.Core
                         if (vertexCount < 3)
                                 return;
 
+                        var connectionCounts = new NativeArray<int>(vertexCount, Allocator.Temp);
+                        for (int e = 0; e < edgeIndices.Length; e += 2)
+                        {
+                                connectionCounts[edgeIndices[e + 0]]++;
+                                connectionCounts[edgeIndices[e + 1]]++;
+                        }
+
                         for (int i = 0; i < vertexCount; i++)
                         {
+                                if (connectionCounts[i] >= 2)
+                                        continue;
+
                                 int next = (i + 1) % vertexCount;
 
                                 bool exists = false;
@@ -241,12 +251,17 @@ namespace Chisel.Core
                                                 break;
                                         }
                                 }
+
                                 if (!exists)
                                 {
                                         edgeIndices.Add(i);
                                         edgeIndices.Add(next);
+                                        connectionCounts[i]++;
+                                        connectionCounts[next]++;
                                 }
                         }
+
+                        connectionCounts.Dispose();
                 }
 
 		// Helper function to check if point q lies on segment pr (assuming p, q, r are collinear)

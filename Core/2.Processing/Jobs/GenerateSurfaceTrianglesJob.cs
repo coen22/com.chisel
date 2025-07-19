@@ -245,9 +245,18 @@ namespace Chisel.Core
 #endif
                                                                 vertex2DRemapper.RemoveSelfIntersectingEdges();
                                                         }
-                                                        vertex2DRemapper.AddMissingEdges();
+                                                       vertex2DRemapper.AddMissingEdges();
+                                                       if (vertex2DRemapper.CheckForSelfIntersections())
+                                                       {
+#if UNITY_EDITOR && DEBUG
+                                                                Debug.LogWarning($"Self-intersection detected after closing loop in surface {surf}, loop index {loopIdx}.");
+#endif
+                                                                vertex2DRemapper.RemoveSelfIntersectingEdges();
+                                                                vertex2DRemapper.AddMissingEdges();
+                                                       }
+                                                       vertex2DRemapper.RemoveUnusedVertices();
 
-							var roVerts = vertex2DRemapper.AsReadOnly();
+                                                       var roVerts = vertex2DRemapper.AsReadOnly();
 
 							// Pre-check: need enough points and edges
 							if (roVerts.positions2D.Length < 3 || roVerts.edgeIndices.Length < 3)
