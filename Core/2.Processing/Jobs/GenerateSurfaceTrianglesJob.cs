@@ -388,24 +388,25 @@ namespace Chisel.Core
 				}
 			}
 		}
-		static bool IsDegenerate(NativeArray<double2> verts)
-		{
-			if (verts.Length < 3)
-				return true;
+                static bool IsDegenerate(NativeArray<double2> verts)
+                {
+                        if (verts.Length < 3)
+                                return true;
 
-			double2 min = verts[0];
-			double2 max = verts[0];
+                        double2 min = verts[0];
+                        double2 max = verts[0];
 
-			for (int i = 1; i < verts.Length; i++)
-			{
-				var v = verts[i];
-				min = math.min(min, v);
-				max = math.max(max, v);
-			}
+                        for (int i = 1; i < verts.Length; i++)
+                        {
+                                var v = verts[i];
+                                min = math.min(min, v);
+                                max = math.max(max, v);
+                        }
 
-			// A zero-area axis-aligned box means every point sits on a line
-			return math.abs(max.x - min.x) <= double.Epsilon ||
-				   math.abs(max.y - min.y) <= double.Epsilon;
-		}
-	}
+                        // A zero-area axis-aligned box means every point sits on a line
+                        const double kEpsilon = 1e-12;
+                        return math.abs(max.x - min.x) <= kEpsilon ||
+                                   math.abs(max.y - min.y) <= kEpsilon;
+                }
+        }
 }
