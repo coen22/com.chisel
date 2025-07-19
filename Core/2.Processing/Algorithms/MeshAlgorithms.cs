@@ -220,6 +220,58 @@ namespace Chisel.Core
                         newPositions.Dispose();
                 }
 
+                public void AddMissingEdges()
+                {
+                        int vertexCount = positions2D.Length;
+                        if (vertexCount < 3)
+                                return;
+
+                        bool EdgeExists(int a, int b)
+                        {
+                                for (int i = 0; i < edgeIndices.Length; i += 2)
+                                {
+                                        int e0 = edgeIndices[i + 0];
+                                        int e1 = edgeIndices[i + 1];
+                                        if ((e0 == a && e1 == b) || (e0 == b && e1 == a))
+                                                return true;
+                                }
+                                return false;
+                        }
+
+                        bool WouldIntersect(int a, int b)
+                        {
+                                var p1 = positions2D[a];
+                                var q1 = positions2D[b];
+                                for (int i = 0; i < edgeIndices.Length; i += 2)
+                                {
+                                        int e0 = edgeIndices[i + 0];
+                                        int e1 = edgeIndices[i + 1];
+
+                                        if (e0 == a || e0 == b || e1 == a || e1 == b)
+                                                continue;
+
+                                        var p2 = positions2D[e0];
+                                        var q2 = positions2D[e1];
+                                        if (SegmentsIntersect(p1, q1, p2, q2))
+                                                return true;
+                                }
+                                return false;
+                        }
+
+                        for (int i = 0; i < vertexCount; i++)
+                        {
+                                int next = (i + 1) % vertexCount;
+                                if (EdgeExists(i, next))
+                                        continue;
+
+                                if (WouldIntersect(i, next))
+                                        continue;
+
+                                edgeIndices.Add(i);
+                                edgeIndices.Add(next);
+                        }
+                }
+
 		// Helper function to check if point q lies on segment pr (assuming p, q, r are collinear)
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static bool OnSegment(double2 p, double2 q, double2 r)

@@ -245,7 +245,7 @@ namespace Chisel.Core
 #endif
                                                                 vertex2DRemapper.RemoveSelfIntersectingEdges();
                                                         }
-                                                        vertex2DRemapper.RemoveUnusedVertices();
+                                                        vertex2DRemapper.AddMissingEdges();
 
 							var roVerts = vertex2DRemapper.AsReadOnly();
 
