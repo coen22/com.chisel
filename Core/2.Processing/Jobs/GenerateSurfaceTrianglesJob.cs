@@ -396,16 +396,22 @@ namespace Chisel.Core
                        double2 min = verts[0];
                        double2 max = verts[0];
 
-                       for (int i = 1; i < verts.Length; i++)
+                       double area = 0;
+                       double2 prev = verts[verts.Length - 1];
+                       for (int i = 0; i < verts.Length; i++)
                        {
-                               var v = verts[i];
-                               min = math.min(min, v);
-                               max = math.max(max, v);
+                               var curr = verts[i];
+                               area += (prev.x * curr.y) - (prev.y * curr.x);
+                               min = math.min(min, curr);
+                               max = math.max(max, curr);
+                               prev = curr;
                        }
 
                        const double kEpsilon = 1e-6;
 
-                       // A zero-area axis-aligned box means every point sits on a line
+                       if (math.abs(area) <= kEpsilon)
+                               return true;
+
                        return math.abs(max.x - min.x) <= kEpsilon ||
                                   math.abs(max.y - min.y) <= kEpsilon;
                }
