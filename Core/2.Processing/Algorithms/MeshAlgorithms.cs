@@ -241,33 +241,11 @@ namespace Chisel.Core
                                                 break;
                                         }
                                 }
-                                if (exists)
-                                        continue;
-
-                                bool intersect = false;
-                                var p1 = positions2D[i];
-                                var q1 = positions2D[next];
-                                for (int e = 0; e < edgeIndices.Length; e += 2)
+                                if (!exists)
                                 {
-                                        int e0 = edgeIndices[e + 0];
-                                        int e1 = edgeIndices[e + 1];
-
-                                        if (e0 == i || e0 == next || e1 == i || e1 == next)
-                                                continue;
-
-                                        var p2 = positions2D[e0];
-                                        var q2 = positions2D[e1];
-                                        if (SegmentsIntersect(p1, q1, p2, q2))
-                                        {
-                                                intersect = true;
-                                                break;
-                                        }
+                                        edgeIndices.Add(i);
+                                        edgeIndices.Add(next);
                                 }
-                                if (intersect)
-                                        continue;
-
-                                edgeIndices.Add(i);
-                                edgeIndices.Add(next);
                         }
                 }
 
