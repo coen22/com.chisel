@@ -383,6 +383,42 @@ namespace Chisel.Core
             return normal;
         }
 
+        static bool IsDegenerateLoop(in UnsafeList<Edge> edges, in HashedVertices vertices)
+        {
+            if (edges.Length < 3)
+                return true;
+
+            double3 crossSum = double3.zero;
+            float3 min = vertices[(int)edges[0].index1];
+            float3 max = min;
+
+            for (int i = 0; i < edges.Length; i++)
+            {
+                float3 v0 = vertices[(int)edges[i].index1];
+                float3 v1 = vertices[(int)edges[i].index2];
+
+                crossSum += math.cross((double3)v0, (double3)v1);
+
+                min = math.min(min, v0);
+                max = math.max(max, v0);
+                min = math.min(min, v1);
+                max = math.max(max, v1);
+            }
+
+            double area = math.length(crossSum) * 0.5;
+
+            const double kEpsilon = 1e-6;
+            if (area <= kEpsilon)
+                return true;
+
+            if (math.abs(max.x - min.x) <= kEpsilon ||
+                math.abs(max.y - min.y) <= kEpsilon ||
+                math.abs(max.z - min.z) <= kEpsilon)
+                return true;
+
+            return false;
+        }
+
         void CleanUp(in NativeList<IndexSurfaceInfo> allInfos, ref NativeList<UnsafeList<Edge>> allEdges, in HashedVertices brushVertices, ref UnsafeList<int> loopIndices, ref NativeList<UnsafeList<int>> holeIndices,
 			        [NoAlias] ref NativeList<float4> alltreeSpacePlanes, [NoAlias] ref NativeList<LoopSegment> allSegments, [NoAlias] ref NativeList<Edge> allCombinedEdges, [NoAlias] ref NativeBitArray destroyedEdges)
         {
@@ -430,7 +466,7 @@ namespace Chisel.Core
                 }
 
                 var baseLoopNormal = CalculatePlaneNormal(in baseLoopEdges, in brushVertices);
-                if (math.all(baseLoopNormal == float3.zero))
+                if (math.all(baseLoopNormal == float3.zero) || IsDegenerateLoop(in baseLoopEdges, in brushVertices))
                 {
                     baseLoopEdges.Clear();
                     allEdges[baseloopIndex] = baseLoopEdges;
@@ -477,7 +513,7 @@ namespace Chisel.Core
                     }
 
                     var holeNormal = CalculatePlaneNormal(in holeEdges, in brushVertices);
-                    if (math.all(holeNormal == float3.zero))
+                    if (math.all(holeNormal == float3.zero) || IsDegenerateLoop(in holeEdges, in brushVertices))
                     {
                         holeIndicesList.RemoveAtSwapBack(h);
                         holeIndices[baseloopIndex] = holeIndicesList;
