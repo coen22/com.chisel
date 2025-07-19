@@ -238,13 +238,14 @@ namespace Chisel.Core
 							vertex2DRemapper.ConvertToPlaneSpace(*brushVertices.m_Vertices, edges, map3DTo2D);
 							vertex2DRemapper.RemoveDuplicates();
 
-							if (vertex2DRemapper.CheckForSelfIntersections())
-							{
+                                                        if (vertex2DRemapper.CheckForSelfIntersections())
+                                                        {
 #if UNITY_EDITOR && DEBUG
-								Debug.LogWarning($"Self-intersection detected in surface {surf}, loop index {loopIdx}.");
+                                                                Debug.LogWarning($"Self-intersection detected in surface {surf}, loop index {loopIdx}.");
 #endif
-								vertex2DRemapper.RemoveSelfIntersectingEdges();
-							}
+                                                                vertex2DRemapper.RemoveSelfIntersectingEdges();
+                                                        }
+                                                        vertex2DRemapper.RemoveUnusedVertices();
 
 							var roVerts = vertex2DRemapper.AsReadOnly();
 

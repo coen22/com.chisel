@@ -131,24 +131,94 @@ namespace Chisel.Core
             usedIndices.Dispose();
 		}
 		
-		public void RemoveDuplicates()
-		{
-			var cleaned = new NativeList<int>(positions2D.Length, Allocator.Temp);
-			var used = new NativeArray<bool>(positions2D.Length, Allocator.Temp);
-			for (int i = 0; i < positions2D.Length; i++)
-			{
-				if (!used[i])
-				{
-					cleaned.Add(lookup[i]);
-					used[i] = true;
-				}
-			}
+                public void RemoveDuplicates()
+                {
+                        var remap = new NativeArray<int>(positions2D.Length, Allocator.Temp);
+                        var newLookup = new NativeList<int>(positions2D.Length, Allocator.Temp);
+                        var newPositions = new NativeList<double2>(positions2D.Length, Allocator.Temp);
 
-			lookup.Clear();
-			lookup.AddRange(cleaned.ToArray(Allocator.Temp));
-			cleaned.Dispose();
-			used.Dispose();
-		}
+                        for (int i = 0; i < positions2D.Length; i++)
+                        {
+                                var pos = positions2D[i];
+                                int found = -1;
+                                for (int j = 0; j < newPositions.Length; j++)
+                                {
+                                        if (math.all(pos == newPositions[j]))
+                                        {
+                                                found = j;
+                                                break;
+                                        }
+                                }
+
+                                if (found == -1)
+                                {
+                                        remap[i] = newPositions.Length;
+                                        newLookup.Add(lookup[i]);
+                                        newPositions.Add(pos);
+                                }
+                                else
+                                {
+                                        remap[i] = found;
+                                }
+                        }
+
+                        for (int i = 0; i < edgeIndices.Length; i++)
+                        {
+                                edgeIndices[i] = remap[edgeIndices[i]];
+                        }
+
+                        lookup.Clear();
+                        positions2D.Clear();
+                        lookup.AddRange(newLookup.AsArray());
+                        positions2D.AddRange(newPositions.AsArray());
+
+                        remap.Dispose();
+                        newLookup.Dispose();
+                        newPositions.Dispose();
+                }
+
+                public void RemoveUnusedVertices()
+                {
+                        var remap = new NativeArray<int>(positions2D.Length, Allocator.Temp);
+                        for (int i = 0; i < remap.Length; i++)
+                                remap[i] = -1;
+
+                        int count = 0;
+                        for (int i = 0; i < edgeIndices.Length; i++)
+                        {
+                                int idx = edgeIndices[i];
+                                if (remap[idx] == -1)
+                                {
+                                        remap[idx] = count++;
+                                }
+                        }
+
+                        var newLookup = new NativeList<int>(count, Allocator.Temp);
+                        var newPositions = new NativeList<double2>(count, Allocator.Temp);
+                        for (int i = 0; i < positions2D.Length; i++)
+                        {
+                                int newIndex = remap[i];
+                                if (newIndex != -1)
+                                {
+                                        newLookup.Add(lookup[i]);
+                                        newPositions.Add(positions2D[i]);
+                                }
+                        }
+
+                        for (int i = 0; i < edgeIndices.Length; i++)
+                        {
+                                edgeIndices[i] = remap[edgeIndices[i]];
+                        }
+
+                        lookup.Clear();
+                        positions2D.Clear();
+                        lookup.AddRange(newLookup.AsArray());
+                        positions2D.AddRange(newPositions.AsArray());
+
+                        remap.Dispose();
+                        newLookup.Dispose();
+                        newPositions.Dispose();
+                }
 
 		// Helper function to check if point q lies on segment pr (assuming p, q, r are collinear)
 		[MethodImpl(MethodImplOptions.AggressiveInlining)]
