@@ -388,25 +388,35 @@ namespace Chisel.Core
 				}
 			}
 		}
-                static bool IsDegenerate(NativeArray<double2> verts)
-                {
-                        if (verts.Length < 3)
-                                return true;
+               static bool IsDegenerate(NativeArray<double2> verts)
+               {
+                       if (verts.Length < 3)
+                               return true;
 
-                        double2 min = verts[0];
-                        double2 max = verts[0];
+                       double area = 0;
+                       double2 min = verts[0];
+                       double2 max = verts[0];
 
-                        for (int i = 1; i < verts.Length; i++)
-                        {
-                                var v = verts[i];
-                                min = math.min(min, v);
-                                max = math.max(max, v);
-                        }
+                       for (int i = 0; i < verts.Length; i++)
+                       {
+                               var v0 = verts[i];
+                               var v1 = verts[(i + 1) % verts.Length];
 
-                        // A zero-area axis-aligned box means every point sits on a line
-                        const double kEpsilon = 1e-12;
-                        return math.abs(max.x - min.x) <= kEpsilon ||
-                                   math.abs(max.y - min.y) <= kEpsilon;
-                }
+                               area += v0.x * v1.y - v1.x * v0.y;
+
+                               min = math.min(min, v0);
+                               max = math.max(max, v0);
+                       }
+
+                       area = math.abs(area) * 0.5;
+
+                       const double kEpsilon = 1e-6;
+
+                       if (area <= kEpsilon)
+                               return true;
+
+                       return math.abs(max.x - min.x) <= kEpsilon ||
+                                  math.abs(max.y - min.y) <= kEpsilon;
+               }
         }
 }
