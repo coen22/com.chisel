@@ -371,14 +371,19 @@ namespace Chisel.Components
             {
                 if (!brush || brush.hierarchyItem.Model != this)
                     continue;
+
                 var brushMesh = brush.BrushMesh;
-                if (brushMesh == null || brushMesh.vertices == null || brushMesh.polygons == null || brushMesh.halfEdges == null)
+                if (brushMesh == null ||
+                    brushMesh.vertices == null ||
+                    brushMesh.polygons == null ||
+                    brushMesh.halfEdges == null)
                     continue;
 
                 var builder = new StringBuilder();
                 builder.AppendLine($"Brush: {brush.name}");
                 for (int v = 0; v < brushMesh.vertices.Length; v++)
                     builder.AppendLine($"  v[{v}]: {brushMesh.vertices[v]}");
+
                 for (int p = 0; p < brushMesh.polygons.Length; p++)
                 {
                     ref var poly = ref brushMesh.polygons[p];
@@ -386,11 +391,13 @@ namespace Chisel.Components
                     for (int e = 0; e < poly.edgeCount; e++)
                     {
                         var edge = brushMesh.halfEdges[poly.firstEdge + e];
-                        if (e > 0) builder.Append(',');
+                        if (e > 0)
+                            builder.Append(',');
                         builder.Append(edge.vertexIndex);
                     }
                     builder.AppendLine();
                 }
+
                 Debug.Log(builder.ToString(), brush);
             }
         }
