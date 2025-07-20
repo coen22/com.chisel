@@ -248,7 +248,6 @@ namespace Chisel.Components
         [NonSerialized]          bool prevSubtractiveEditing;
         [NonSerialized]          bool prevSmoothNormals;
         [NonSerialized]          float prevSmoothingAngle;
-        [NonSerialized]          bool meshUpdateFlag;
 
         
         public ChiselModelComponent() : base() { }
@@ -365,30 +364,7 @@ namespace Chisel.Components
             IsInitialized = true;
         }
 
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-            ChiselModelManager.Instance.PostUpdateModels -= OnPostUpdateModels;
-            ChiselModelManager.Instance.PostUpdateModels += OnPostUpdateModels;
-        }
-
-        protected override void OnDisable()
-        {
-            ChiselModelManager.Instance.PostUpdateModels -= OnPostUpdateModels;
-            base.OnDisable();
-        }
-
-        void OnPostUpdateModels()
-        {
-            if (!meshUpdateFlag)
-                return;
-            meshUpdateFlag = false;
-            if (!DebugLogBrushes)
-                return;
-            PrintBrushInfo();
-        }
-
-        void PrintBrushInfo()
+        internal void PrintBrushInfo()
         {
             var brushes = GetComponentsInChildren<ChiselBrushComponent>();
             foreach (var brush in brushes)
