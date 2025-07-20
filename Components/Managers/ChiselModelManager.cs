@@ -81,10 +81,10 @@ namespace Chisel.Components
 				foundModel.generated = ChiselGeneratedObjects.Create(foundModel.gameObject);
 			}
 
-			var count = foundModel.generated.FinishMeshUpdates(foundModel, meshUpdates, dependencies);
-			Instance.Rebuild(foundModel);
-			return count;
-		}
+                        var count = foundModel.generated.FinishMeshUpdates(foundModel, meshUpdates, dependencies);
+                        Instance.Rebuild(foundModel);
+                        return count;
+                }
 
 		readonly static FinishMeshUpdate finishMeshUpdatesMethod = (FinishMeshUpdate)FinishMeshUpdates;
 

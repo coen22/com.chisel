@@ -674,10 +674,12 @@ namespace Chisel.Components
 
                 var foundMeshCount = foundMeshes.Count;
                 foundMeshes.Clear();
+                if (model.DebugLogBrushes)
+                    model.PrintBrushInfo();
                 return foundMeshCount;
             }
             finally
-			{
+                        {
 				DictionaryPool<ChiselModelComponent, GameObjectState>.Release(gameObjectStates);
 				ListPool<ChiselMeshUpdate>.Release(renderMeshUpdates);
 				//ListPool<ChiselColliderObjectUpdate>.Release(colliderObjectUpdates);

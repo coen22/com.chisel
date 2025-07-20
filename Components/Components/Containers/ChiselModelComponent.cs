@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 using Chisel.Core;
 
@@ -212,6 +213,7 @@ namespace Chisel.Components
         public const string kSubtractiveEditingName       = nameof(SubtractiveEditing);
         public const string kSmoothNormalsName            = nameof(SmoothNormals);
         public const string kSmoothingAngleName           = nameof(SmoothingAngle);
+        public const string kDebugLogBrushesName          = nameof(DebugLogBrushes);
 
 
         public const string kNodeTypeName = "Model";
@@ -242,6 +244,7 @@ namespace Chisel.Components
         public bool               SmoothNormals           = false;
         [Range(0, 180)]
         public float              SmoothingAngle          = 45.0f;
+        public bool               DebugLogBrushes        = false;
         [NonSerialized]          bool prevSubtractiveEditing;
         [NonSerialized]          bool prevSmoothNormals;
         [NonSerialized]          float prevSmoothingAngle;
@@ -359,6 +362,48 @@ namespace Chisel.Components
             prevSmoothNormals   = SmoothNormals;
             prevSmoothingAngle = SmoothingAngle;
             IsInitialized = true;
+        }
+
+        internal void PrintBrushInfo()
+        {
+            var brushes = GetComponentsInChildren<ChiselBrushComponent>();
+            var builder = new StringBuilder();
+
+            foreach (var brush in brushes)
+            {
+                if (!brush || brush.hierarchyItem.Model != this)
+                    continue;
+
+                var brushMesh = brush.BrushMesh;
+                if (brushMesh == null ||
+                    brushMesh.vertices == null ||
+                    brushMesh.polygons == null ||
+                    brushMesh.halfEdges == null)
+                    continue;
+
+                builder.AppendLine($"Brush: {brush.name}");
+
+                for (int v = 0; v < brushMesh.vertices.Length; v++)
+                    builder.AppendLine($"  v[{v}]: {brushMesh.vertices[v]}");
+
+                int triIndex = 0;
+                for (int p = 0; p < brushMesh.polygons.Length; p++)
+                {
+                    ref var poly = ref brushMesh.polygons[p];
+                    int firstEdge = poly.firstEdge;
+                    var halfEdges = brushMesh.halfEdges;
+                    var v0 = halfEdges[firstEdge].vertexIndex;
+                    for (int i = 1; i < poly.edgeCount - 1; i++)
+                    {
+                        var v1 = halfEdges[firstEdge + i].vertexIndex;
+                        var v2 = halfEdges[firstEdge + i + 1].vertexIndex;
+                        builder.AppendLine($"  t[{triIndex++}]: {v0}, {v1}, {v2}");
+                    }
+                }
+            }
+
+            if (builder.Length > 0)
+                Debug.Log(builder.ToString(), this);
         }
 
         void FlipGeneratedMeshes()
