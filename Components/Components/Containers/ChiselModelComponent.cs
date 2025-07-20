@@ -246,6 +246,12 @@ namespace Chisel.Components
         [NonSerialized]          bool prevSmoothNormals;
         [NonSerialized]          float prevSmoothingAngle;
 
+        #region Debug
+        // When enabled all brush geometry will be printed out to the console
+        // at the start of the CSG job update
+        public bool DebugLogBrushes = false;
+        #endregion
+
         
         public ChiselModelComponent() : base() { }
 

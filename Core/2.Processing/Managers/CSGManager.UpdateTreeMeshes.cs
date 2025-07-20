@@ -5,6 +5,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using Unity.Entities;
 using System.Buffers;
+using UnityEngine;
 
 namespace Chisel.Core
 {
@@ -634,6 +635,42 @@ namespace Chisel.Core
 
 				var chiselLookupValues = ChiselTreeLookup.Value[this.tree];
                 ref var brushMeshBlobs = ref ChiselMeshLookup.Value.brushMeshBlobCache;
+
+                var model = UnityEngine.Resources.InstanceIDToObject(this.tree.InstanceID) as Chisel.Components.ChiselModelComponent;
+                if (model != null && model.DebugLogBrushes)
+                {
+                    var sb = new System.Text.StringBuilder();
+                    sb.AppendLine("Brush Debug Info:");
+                    for (int i = 0; i < Temporaries.brushes.Length; i++)
+                    {
+                        var brushID = Temporaries.brushes[i];
+                        var brush = CSGTreeBrush.FindNoErrors(brushID);
+                        if (!brush.Valid)
+                            continue;
+                        sb.AppendLine($"Brush {i} Operation: {brush.Operation}");
+                        var brushMeshBlob = BrushMeshManager.GetBrushMeshBlob(brush.BrushMesh);
+                        if (!brushMeshBlob.IsCreated)
+                            continue;
+                        var vertices = brushMeshBlob.Value.localVertices;
+                        for (int v = 0; v < vertices.Length; v++)
+                            sb.AppendLine($"  v{v}: {vertices[v]}");
+                        var halfEdges = brushMeshBlob.Value.halfEdges;
+                        var polygons = brushMeshBlob.Value.polygons;
+                        for (int p = 0; p < polygons.Length; p++)
+                        {
+                            var polygon = polygons[p];
+                            sb.Append($"  f{p}:");
+                            for (int e = 0; e < polygon.edgeCount; e++)
+                            {
+                                var edgeIndex = polygon.firstEdge + e;
+                                sb.Append(' ');
+                                sb.Append(halfEdges[edgeIndex].vertexIndex);
+                            }
+                            sb.AppendLine();
+                        }
+                    }
+                    UnityEngine.Debug.Log(sb.ToString());
+                }
                 {
                     #region Build Lookup Tables
                     using (kJobBuildLookupTablesJobProfilerMarker.Auto())
