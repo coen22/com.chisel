@@ -367,6 +367,8 @@ namespace Chisel.Components
         internal void PrintBrushInfo()
         {
             var brushes = GetComponentsInChildren<ChiselBrushComponent>();
+            var builder = new StringBuilder();
+
             foreach (var brush in brushes)
             {
                 if (!brush || brush.hierarchyItem.Model != this)
@@ -379,27 +381,29 @@ namespace Chisel.Components
                     brushMesh.halfEdges == null)
                     continue;
 
-                var builder = new StringBuilder();
                 builder.AppendLine($"Brush: {brush.name}");
+
                 for (int v = 0; v < brushMesh.vertices.Length; v++)
                     builder.AppendLine($"  v[{v}]: {brushMesh.vertices[v]}");
 
+                int triIndex = 0;
                 for (int p = 0; p < brushMesh.polygons.Length; p++)
                 {
                     ref var poly = ref brushMesh.polygons[p];
-                    builder.Append($"  f[{p}]:");
-                    for (int e = 0; e < poly.edgeCount; e++)
+                    int firstEdge = poly.firstEdge;
+                    var halfEdges = brushMesh.halfEdges;
+                    var v0 = halfEdges[firstEdge].vertexIndex;
+                    for (int i = 1; i < poly.edgeCount - 1; i++)
                     {
-                        var edge = brushMesh.halfEdges[poly.firstEdge + e];
-                        if (e > 0)
-                            builder.Append(',');
-                        builder.Append(edge.vertexIndex);
+                        var v1 = halfEdges[firstEdge + i].vertexIndex;
+                        var v2 = halfEdges[firstEdge + i + 1].vertexIndex;
+                        builder.AppendLine($"  t[{triIndex++}]: {v0}, {v1}, {v2}");
                     }
-                    builder.AppendLine();
                 }
-
-                Debug.Log(builder.ToString(), brush);
             }
+
+            if (builder.Length > 0)
+                Debug.Log(builder.ToString(), this);
         }
 
         void FlipGeneratedMeshes()
