@@ -82,8 +82,6 @@ namespace Chisel.Components
 			}
 
                         var count = foundModel.generated.FinishMeshUpdates(foundModel, meshUpdates, dependencies);
-                        if (foundModel.DebugLogBrushes)
-                                foundModel.PrintBrushInfo();
                         Instance.Rebuild(foundModel);
                         return count;
                 }
