@@ -212,6 +212,7 @@ namespace Chisel.Components
         public const string kSubtractiveEditingName       = nameof(SubtractiveEditing);
         public const string kSmoothNormalsName            = nameof(SmoothNormals);
         public const string kSmoothingAngleName           = nameof(SmoothingAngle);
+        public const string kDebugLogBrushesName          = nameof(DebugLogBrushes);
 
 
         public const string kNodeTypeName = "Model";

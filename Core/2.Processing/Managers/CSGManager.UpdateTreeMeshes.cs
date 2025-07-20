@@ -876,11 +876,11 @@ namespace Chisel.Core
                         var brushMeshBlob = BrushMeshManager.GetBrushMeshBlob(brush.BrushMesh);
                         if (!brushMeshBlob.IsCreated)
                             continue;
-                        var vertices = brushMeshBlob.Value.localVertices;
+                        ref var vertices = ref brushMeshBlob.Value.localVertices;
                         for (int v = 0; v < vertices.Length; v++)
                             sb.AppendLine($"  v{v}: {vertices[v]}");
-                        var halfEdges = brushMeshBlob.Value.halfEdges;
-                        var polygons = brushMeshBlob.Value.polygons;
+                        ref var halfEdges = ref brushMeshBlob.Value.halfEdges;
+                        ref var polygons = ref brushMeshBlob.Value.polygons;
                         for (int p = 0; p < polygons.Length; p++)
                         {
                             var polygon = polygons[p];
