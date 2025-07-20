@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 using Chisel.Core;
 
@@ -212,6 +213,7 @@ namespace Chisel.Components
         public const string kSubtractiveEditingName       = nameof(SubtractiveEditing);
         public const string kSmoothNormalsName            = nameof(SmoothNormals);
         public const string kSmoothingAngleName           = nameof(SmoothingAngle);
+        public const string kDebugLogBrushesName          = nameof(DebugLogBrushes);
 
 
         public const string kNodeTypeName = "Model";
@@ -242,9 +244,11 @@ namespace Chisel.Components
         public bool               SmoothNormals           = false;
         [Range(0, 180)]
         public float              SmoothingAngle          = 45.0f;
+        public bool               DebugLogBrushes        = false;
         [NonSerialized]          bool prevSubtractiveEditing;
         [NonSerialized]          bool prevSmoothNormals;
         [NonSerialized]          float prevSmoothingAngle;
+        [NonSerialized]          bool meshUpdateFlag;
 
         
         public ChiselModelComponent() : base() { }
@@ -359,6 +363,60 @@ namespace Chisel.Components
             prevSmoothNormals   = SmoothNormals;
             prevSmoothingAngle = SmoothingAngle;
             IsInitialized = true;
+        }
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            ChiselModelManager.Instance.PostUpdateModels -= OnPostUpdateModels;
+            ChiselModelManager.Instance.PostUpdateModels += OnPostUpdateModels;
+        }
+
+        protected override void OnDisable()
+        {
+            ChiselModelManager.Instance.PostUpdateModels -= OnPostUpdateModels;
+            base.OnDisable();
+        }
+
+        void OnPostUpdateModels()
+        {
+            if (!meshUpdateFlag)
+                return;
+            meshUpdateFlag = false;
+            if (!DebugLogBrushes)
+                return;
+            PrintBrushInfo();
+        }
+
+        void PrintBrushInfo()
+        {
+            var brushes = GetComponentsInChildren<ChiselBrushComponent>();
+            foreach (var brush in brushes)
+            {
+                if (!brush || brush.hierarchyItem.Model != this)
+                    continue;
+                var brushMesh = brush.BrushMesh;
+                if (brushMesh == null || brushMesh.vertices == null || brushMesh.polygons == null || brushMesh.halfEdges == null)
+                    continue;
+
+                var builder = new StringBuilder();
+                builder.AppendLine($"Brush: {brush.name}");
+                for (int v = 0; v < brushMesh.vertices.Length; v++)
+                    builder.AppendLine($"  v[{v}]: {brushMesh.vertices[v]}");
+                for (int p = 0; p < brushMesh.polygons.Length; p++)
+                {
+                    ref var poly = ref brushMesh.polygons[p];
+                    builder.Append($"  f[{p}]:");
+                    for (int e = 0; e < poly.edgeCount; e++)
+                    {
+                        var edge = brushMesh.halfEdges[poly.firstEdge + e];
+                        if (e > 0) builder.Append(',');
+                        builder.Append(edge.vertexIndex);
+                    }
+                    builder.AppendLine();
+                }
+                Debug.Log(builder.ToString(), brush);
+            }
         }
 
         void FlipGeneratedMeshes()
