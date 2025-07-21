@@ -853,15 +853,17 @@ namespace Chisel.Core
                 if (modelObj != null)
                 {
                     var type = modelObj.GetType();
-                    var prop = type.GetProperty("DebugLogBrushes", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    var prop  = type.GetProperty("DebugLogBrushes", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    FieldInfo field;
                     if (prop != null && prop.PropertyType == typeof(bool))
                         debugLogBrushes = (bool)prop.GetValue(modelObj);
                     else
                     {
-                        var field = type.GetField("DebugLogBrushes", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        field = type.GetField("DebugLogBrushes", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         if (field != null && field.FieldType == typeof(bool))
                             debugLogBrushes = (bool)field.GetValue(modelObj);
                     }
+
                     prop = type.GetProperty("DebugLogResult", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                     if (prop != null && prop.PropertyType == typeof(bool))
                         debugLogResult = (bool)prop.GetValue(modelObj);
@@ -2024,7 +2026,8 @@ namespace Chisel.Core
                     for (int m = 0; m < Temporaries.vertexBufferContents.meshes.Length; m++)
                     {
                         var meshData = Temporaries.vertexBufferContents.meshes[m];
-                        sb2.AppendLine($"Mesh {m} vertices: {meshData.vertexCount} indices: {meshData.indexCount}");
+                        var indexCount = meshData.GetIndexData<int>().Length;
+                        sb2.AppendLine($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
                     }
                     UnityEngine.Debug.Log(sb2.ToString());
                 }
