@@ -876,20 +876,21 @@ namespace Chisel.Core
                 }
                 if (debugLogBrushes)
                 {
-                    UnityEngine.Debug.Log("Brush Debug Info:");
+                    var lines = new System.Collections.Generic.List<string>();
+                    lines.Add("Brush Debug Info:");
                     for (int i = 0; i < Temporaries.brushes.Length; i++)
                     {
                         var brushID = Temporaries.brushes[i];
                         var brush   = CSGTreeBrush.FindNoErrors(brushID);
                         if (!brush.Valid)
                             continue;
-                        UnityEngine.Debug.Log($"Brush {i} Operation: {brush.Operation}");
+                        lines.Add($"Brush {i} Operation: {brush.Operation}");
                         var brushMeshBlob = BrushMeshManager.GetBrushMeshBlob(brush.BrushMesh);
                         if (!brushMeshBlob.IsCreated)
                             continue;
                         ref var vertices  = ref brushMeshBlob.Value.localVertices;
                         for (int v = 0; v < vertices.Length; v++)
-                            UnityEngine.Debug.Log($"  v{v}: {vertices[v]}");
+                            lines.Add($"  v{v}: {vertices[v]}");
                         ref var halfEdges = ref brushMeshBlob.Value.halfEdges;
                         ref var polygons  = ref brushMeshBlob.Value.polygons;
                         for (int p = 0; p < polygons.Length; p++)
@@ -901,9 +902,10 @@ namespace Chisel.Core
                                 var edgeIndex = polygon.firstEdge + e;
                                 line += $" {halfEdges[edgeIndex].vertexIndex}";
                             }
-                            UnityEngine.Debug.Log(line);
+                            lines.Add(line);
                         }
                     }
+                    UnityEngine.Debug.Log(string.Join("\n", lines));
                 }
 
                 #region Perform CSG
@@ -2018,7 +2020,8 @@ namespace Chisel.Core
 
                 if (debugLogResult)
                 {
-                    UnityEngine.Debug.Log("Result Mesh Info:");
+                    var lines = new System.Collections.Generic.List<string>();
+                    lines.Add("Result Mesh Info:");
                     for (int m = 0; m < Temporaries.vertexBufferContents.meshes.Length; m++)
                     {
                         var meshData   = Temporaries.vertexBufferContents.meshes[m];
@@ -2026,12 +2029,13 @@ namespace Chisel.Core
                         var indices    = meshData.GetIndexData<int>();
                         var indexCount = indices.Length;
 
-                        UnityEngine.Debug.Log($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
+                        lines.Add($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
                         for (int v = 0; v < meshData.vertexCount; v++)
-                            UnityEngine.Debug.Log($"  v{v}: {vertices[v].position}");
+                            lines.Add($"  v{v}: {vertices[v].position}");
                         for (int t = 0; t < indexCount; t += 3)
-                            UnityEngine.Debug.Log($"  tri{t / 3}: {indices[t]}, {indices[t + 1]}, {indices[t + 2]}");
+                            lines.Add($"  tri{t / 3}: {indices[t]}, {indices[t + 1]}, {indices[t + 2]}");
                     }
+                    UnityEngine.Debug.Log(string.Join("\n", lines));
                 }
 
 
