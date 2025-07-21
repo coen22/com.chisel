@@ -272,15 +272,12 @@ namespace Chisel.Core
                                                                 // Inside the loop after calling Triangulate:
                                                                 if (output.Status.Value != Status.OK || output.Triangles.Length == 0)
                                                                 {
-                                                                        var sb = new System.Text.StringBuilder();
-                                                                        sb.AppendLine($"Triangulator {(output.Status.Value != Status.OK ? "failed" : "returned zero triangles")} for surface {surf}, loop index {loopIdx} with status {output.Status.Value.ToString()} ({output.Status.Value})");
-                                                                        sb.AppendLine($"Positions ({roVerts.positions2D.Length}):");
+                                                                        Debug.LogError($"Triangulator {(output.Status.Value != Status.OK ? "failed" : "returned zero triangles")} for surface {surf}, loop index {loopIdx} with status {output.Status.Value.ToString()} ({output.Status.Value})");
+                                                                        Debug.LogError($"Positions ({roVerts.positions2D.Length}):");
                                                                         for (int pi = 0; pi < roVerts.positions2D.Length; pi++)
-                                                                                sb.AppendLine($"  {pi}: {roVerts.positions2D[pi]}");
-                                                                        sb.Append("Edges: ");
+                                                                                Debug.LogError($"  {pi}: {roVerts.positions2D[pi]}");
                                                                         for (int ei = 0; ei < roVerts.edgeIndices.Length; ei += 2)
-                                                                                sb.Append($"({roVerts.edgeIndices[ei]},{roVerts.edgeIndices[ei + 1]}) ");
-                                                                        Debug.LogError(sb.ToString());
+                                                                                Debug.LogError($"Edge {ei / 2}: ({roVerts.edgeIndices[ei]}, {roVerts.edgeIndices[ei + 1]})");
                                                                 }
 #endif
                                                                 if (output.Status.Value != Status.OK || output.Triangles.Length == 0)

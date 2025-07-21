@@ -876,37 +876,34 @@ namespace Chisel.Core
                 }
                 if (debugLogBrushes)
                 {
-                    var sb = new System.Text.StringBuilder();
-                    sb.AppendLine("Brush Debug Info:");
+                    UnityEngine.Debug.Log("Brush Debug Info:");
                     for (int i = 0; i < Temporaries.brushes.Length; i++)
                     {
                         var brushID = Temporaries.brushes[i];
-                        var brush = CSGTreeBrush.FindNoErrors(brushID);
+                        var brush   = CSGTreeBrush.FindNoErrors(brushID);
                         if (!brush.Valid)
                             continue;
-                        sb.AppendLine($"Brush {i} Operation: {brush.Operation}");
+                        UnityEngine.Debug.Log($"Brush {i} Operation: {brush.Operation}");
                         var brushMeshBlob = BrushMeshManager.GetBrushMeshBlob(brush.BrushMesh);
                         if (!brushMeshBlob.IsCreated)
                             continue;
-                        ref var vertices = ref brushMeshBlob.Value.localVertices;
+                        ref var vertices  = ref brushMeshBlob.Value.localVertices;
                         for (int v = 0; v < vertices.Length; v++)
-                            sb.AppendLine($"  v{v}: {vertices[v]}");
+                            UnityEngine.Debug.Log($"  v{v}: {vertices[v]}");
                         ref var halfEdges = ref brushMeshBlob.Value.halfEdges;
-                        ref var polygons = ref brushMeshBlob.Value.polygons;
+                        ref var polygons  = ref brushMeshBlob.Value.polygons;
                         for (int p = 0; p < polygons.Length; p++)
                         {
                             var polygon = polygons[p];
-                            sb.Append($"  f{p}:");
+                            string line = $"  f{p}:";
                             for (int e = 0; e < polygon.edgeCount; e++)
                             {
                                 var edgeIndex = polygon.firstEdge + e;
-                                sb.Append(' ');
-                                sb.Append(halfEdges[edgeIndex].vertexIndex);
+                                line += $" {halfEdges[edgeIndex].vertexIndex}";
                             }
-                            sb.AppendLine();
+                            UnityEngine.Debug.Log(line);
                         }
                     }
-                    UnityEngine.Debug.Log(sb.ToString());
                 }
 
                 #region Perform CSG
@@ -2021,8 +2018,7 @@ namespace Chisel.Core
 
                 if (debugLogResult)
                 {
-                    var sb2 = new System.Text.StringBuilder();
-                    sb2.AppendLine("Result Mesh Info:");
+                    UnityEngine.Debug.Log("Result Mesh Info:");
                     for (int m = 0; m < Temporaries.vertexBufferContents.meshes.Length; m++)
                     {
                         var meshData   = Temporaries.vertexBufferContents.meshes[m];
@@ -2030,13 +2026,12 @@ namespace Chisel.Core
                         var indices    = meshData.GetIndexData<int>();
                         var indexCount = indices.Length;
 
-                        sb2.AppendLine($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
+                        UnityEngine.Debug.Log($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
                         for (int v = 0; v < meshData.vertexCount; v++)
-                            sb2.AppendLine($"  v{v}: {vertices[v].position}");
+                            UnityEngine.Debug.Log($"  v{v}: {vertices[v].position}");
                         for (int t = 0; t < indexCount; t += 3)
-                            sb2.AppendLine($"  tri{t / 3}: {indices[t]}, {indices[t + 1]}, {indices[t + 2]}");
+                            UnityEngine.Debug.Log($"  tri{t / 3}: {indices[t]}, {indices[t + 1]}, {indices[t + 2]}");
                     }
-                    UnityEngine.Debug.Log(sb2.ToString());
                 }
 
 
