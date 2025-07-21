@@ -246,16 +246,9 @@ namespace Chisel.Core
                                                                 vertex2DRemapper.RemoveSelfIntersectingEdges();
                                                         }
 
-                                                        SortEdges(vertex2DRemapper.edgeIndices);
+                                                       SortEdges(vertex2DRemapper.edgeIndices);
 
-                                                        var roVerts = vertex2DRemapper.AsReadOnly();
-
-                                                        var areaOrientation = ComputeSignedArea(roVerts.positions2D, roVerts.edgeIndices);
-                                                        if (areaOrientation < 0)
-                                                        {
-                                                                ReverseEdges(vertex2DRemapper.edgeIndices);
-                                                                roVerts = vertex2DRemapper.AsReadOnly();
-                                                        }
+                                                       var roVerts = vertex2DRemapper.AsReadOnly();
 
 							// Pre-check: need enough points and edges
 							if (roVerts.positions2D.Length < 3 || roVerts.edgeIndices.Length < 3)
@@ -434,17 +427,6 @@ namespace Chisel.Core
                                    math.abs(max.y - min.y) <= double.Epsilon;
                 }
 
-                static double ComputeSignedArea(NativeArray<double2> verts, NativeArray<int> edges)
-                {
-                        double area = 0;
-                        for (int i = 0; i < edges.Length; i += 2)
-                        {
-                                var a = verts[edges[i]];
-                                var b = verts[edges[i + 1]];
-                                area += (a.x * b.y) - (b.x * a.y);
-                        }
-                        return area * 0.5;
-                }
 
                 static void SortEdges(NativeList<int> edges)
                 {
