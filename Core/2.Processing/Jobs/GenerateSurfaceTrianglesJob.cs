@@ -238,16 +238,24 @@ namespace Chisel.Core
 							vertex2DRemapper.ConvertToPlaneSpace(*brushVertices.m_Vertices, edges, map3DTo2D);
 							vertex2DRemapper.RemoveDuplicates();
 
-							if (vertex2DRemapper.CheckForSelfIntersections())
-							{
+                                                        if (vertex2DRemapper.CheckForSelfIntersections())
+                                                        {
 #if UNITY_EDITOR && DEBUG
-								Debug.LogWarning($"Self-intersection detected in surface {surf}, loop index {loopIdx}.");
+                                                                Debug.LogWarning($"Self-intersection detected in surface {surf}, loop index {loopIdx}.");
 #endif
-                                                        vertex2DRemapper.RemoveSelfIntersectingEdges();
-                                                        SortEdges(vertex2DRemapper.edgeIndices);
-							}
+                                                                vertex2DRemapper.RemoveSelfIntersectingEdges();
+                                                        }
 
-							var roVerts = vertex2DRemapper.AsReadOnly();
+                                                        SortEdges(vertex2DRemapper.edgeIndices);
+
+                                                        var roVerts = vertex2DRemapper.AsReadOnly();
+
+                                                        var areaOrientation = ComputeSignedArea(roVerts.positions2D, roVerts.edgeIndices);
+                                                        if (areaOrientation < 0)
+                                                        {
+                                                                ReverseEdges(vertex2DRemapper.edgeIndices);
+                                                                roVerts = vertex2DRemapper.AsReadOnly();
+                                                        }
 
 							// Pre-check: need enough points and edges
 							if (roVerts.positions2D.Length < 3 || roVerts.edgeIndices.Length < 3)
@@ -272,27 +280,19 @@ namespace Chisel.Core
 
                                                                 if (output.Status.Value != Status.OK || output.Triangles.Length == 0)
                                                                 {
-                                                                        var area = ComputeSignedArea(roVerts.positions2D, roVerts.edgeIndices);
-                                                                        if (area < 0)
-                                                                        {
-                                                                                for (int ri = 0; ri < vertex2DRemapper.edgeIndices.Length; ri += 2)
+                                                                        ReverseEdges(vertex2DRemapper.edgeIndices);
+                                                                        roVerts = vertex2DRemapper.AsReadOnly();
+
+                                                                        output.Triangles.Clear();
+                                                                        triangulator.Triangulate(
+                                                                                new andywiecko.BurstTriangulator.LowLevel.Unsafe.InputData<double2>
                                                                                 {
-                                                                                        var tmp = vertex2DRemapper.edgeIndices[ri];
-                                                                                        vertex2DRemapper.edgeIndices[ri] = vertex2DRemapper.edgeIndices[ri + 1];
-                                                                                        vertex2DRemapper.edgeIndices[ri + 1] = tmp;
-                                                                                }
-                                                                                roVerts = vertex2DRemapper.AsReadOnly();
-                                                                                output.Triangles.Clear();
-                                                                                triangulator.Triangulate(
-                                                                                        new andywiecko.BurstTriangulator.LowLevel.Unsafe.InputData<double2>
-                                                                                        {
-                                                                                                Positions = roVerts.positions2D,
-                                                                                                ConstraintEdges = roVerts.edgeIndices
-                                                                                        },
-                                                                                        output,
-                                                                                        settings,
-                                                                                        Allocator.Temp);
-                                                                        }
+                                                                                        Positions = roVerts.positions2D,
+                                                                                        ConstraintEdges = roVerts.edgeIndices
+                                                                                },
+                                                                                output,
+                                                                                settings,
+                                                                                Allocator.Temp);
                                                                 }
 #if UNITY_EDITOR && DEBUG
                                                                 // Inside the loop after calling Triangulate:
@@ -499,6 +499,28 @@ namespace Chisel.Core
 
                         sorted.Dispose();
                         used.Dispose();
+                }
+
+                static void ReverseEdges(NativeList<int> edges)
+                {
+                        int edgeCount = edges.Length / 2;
+                        if (edgeCount <= 1)
+                                return;
+
+                        var reversed = new NativeArray<int>(edges.Length, Allocator.Temp);
+                        for (int i = 0; i < edgeCount; i++)
+                        {
+                                int a = edges[i * 2 + 0];
+                                int b = edges[i * 2 + 1];
+                                int ri = (edgeCount - 1 - i) * 2;
+                                reversed[ri + 0] = b;
+                                reversed[ri + 1] = a;
+                        }
+
+                        edges.Clear();
+                        edges.AddRange(reversed);
+
+                        reversed.Dispose();
                 }
         }
 }
