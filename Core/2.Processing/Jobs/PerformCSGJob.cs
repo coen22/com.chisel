@@ -982,7 +982,7 @@ namespace Chisel.Core
                             ref var routingLookup   = ref routingLookups[routingTableIndex];
                             var intersectionLoop    = intersectionLoops[offset];
                             var intersectionInfo    = intersectionSurfaceInfo[offset];
-                            for (int l = loopIndices.Length - 1; l >= 0; l--)
+                            for (int l = 0; l < loopIndices.Length; l++)
                             {
                                 var surfaceLoopIndex = loopIndices[l];
                                 var surfaceLoopEdges = allEdges[surfaceLoopIndex];

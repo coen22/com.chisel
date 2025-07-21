@@ -56,6 +56,7 @@ namespace Chisel.Editors
         readonly static GUIContent kSmoothNormalsContents                 = new("Smooth Normals");
         readonly static GUIContent kSmoothingAngleContents                = new("Smoothing Angle");
         readonly static GUIContent kDebugLogBrushesContents              = new("Debug Log Brushes");
+        readonly static GUIContent kDebugLogResultContents               = new("Debug Log Result");
         readonly static GUIContent kUnwrapParamsContents                   = new("UV Generation");
 
         readonly static GUIContent kForceBuildUVsContents                  = new("Build", "Manually build lightmap UVs for generated meshes. This operation can be slow for more complicated meshes");
@@ -138,6 +139,7 @@ namespace Chisel.Editors
         SerializedProperty smoothNormalsProp;
         SerializedProperty smoothingAngleProp;
         SerializedProperty debugLogBrushesProp;
+        SerializedProperty debugLogResultProp;
         SerializedProperty autoRebuildUVsProp;
         SerializedProperty angleErrorProp;
         SerializedProperty areaErrorProp;
@@ -233,7 +235,8 @@ namespace Chisel.Editors
             smoothNormalsProp           = serializedObject.FindProperty($"{ChiselModelComponent.kSmoothNormalsName}");
             smoothingAngleProp          = serializedObject.FindProperty($"{ChiselModelComponent.kSmoothingAngleName}");
             debugLogBrushesProp         = serializedObject.FindProperty($"{ChiselModelComponent.kDebugLogBrushesName}");
-           autoRebuildUVsProp           = serializedObject.FindProperty($"{ChiselModelComponent.kAutoRebuildUVsName}");
+            debugLogResultProp          = serializedObject.FindProperty($"{ChiselModelComponent.kDebugLogResultName}");
+            autoRebuildUVsProp           = serializedObject.FindProperty($"{ChiselModelComponent.kAutoRebuildUVsName}");
             angleErrorProp               = serializedObject.FindProperty($"{ChiselModelComponent.kRenderSettingsName}.{ChiselGeneratedRenderSettings.kUVGenerationSettingsName}.{SerializableUnwrapParam.kAngleErrorName}");
             areaErrorProp                = serializedObject.FindProperty($"{ChiselModelComponent.kRenderSettingsName}.{ChiselGeneratedRenderSettings.kUVGenerationSettingsName}.{SerializableUnwrapParam.kAreaErrorName}");
             hardAngleProp                = serializedObject.FindProperty($"{ChiselModelComponent.kRenderSettingsName}.{ChiselGeneratedRenderSettings.kUVGenerationSettingsName}.{SerializableUnwrapParam.kHardAngleName}");
@@ -1266,6 +1269,7 @@ namespace Chisel.Editors
                     {
                         EditorGUI.indentLevel++;
                         EditorGUILayout.PropertyField(debugLogBrushesProp, kDebugLogBrushesContents);
+                        EditorGUILayout.PropertyField(debugLogResultProp, kDebugLogResultContents);
                         EditorGUI.indentLevel--;
                     }
                     EditorGUILayout.EndFoldoutHeaderGroup();
