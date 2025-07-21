@@ -243,7 +243,8 @@ namespace Chisel.Core
 #if UNITY_EDITOR && DEBUG
 								Debug.LogWarning($"Self-intersection detected in surface {surf}, loop index {loopIdx}.");
 #endif
-								vertex2DRemapper.RemoveSelfIntersectingEdges();
+                                                        vertex2DRemapper.RemoveSelfIntersectingEdges();
+                                                        SortEdges(vertex2DRemapper.edgeIndices);
 							}
 
 							var roVerts = vertex2DRemapper.AsReadOnly();
@@ -256,32 +257,57 @@ namespace Chisel.Core
 							if (IsDegenerate(roVerts.positions2D))
 								continue;
 
-							try
-							{
-								output.Triangles.Clear();
-								triangulator.Triangulate(
-									new andywiecko.BurstTriangulator.LowLevel.Unsafe.InputData<double2>
-									{
-										Positions = roVerts.positions2D,
-										ConstraintEdges = roVerts.edgeIndices
-									},
-									output,
-									settings,
-									Allocator.Temp);
+                                                        try
+                                                        {
+                                                                output.Triangles.Clear();
+                                                                triangulator.Triangulate(
+                                                                        new andywiecko.BurstTriangulator.LowLevel.Unsafe.InputData<double2>
+                                                                        {
+                                                                               Positions = roVerts.positions2D,
+                                                                               ConstraintEdges = roVerts.edgeIndices
+                                                                        },
+                                                                        output,
+                                                                        settings,
+                                                                        Allocator.Temp);
+
+                                                                if (output.Status.Value != Status.OK || output.Triangles.Length == 0)
+                                                                {
+                                                                        var area = ComputeSignedArea(roVerts.positions2D, roVerts.edgeIndices);
+                                                                        if (area < 0)
+                                                                        {
+                                                                                for (int ri = 0; ri < vertex2DRemapper.edgeIndices.Length; ri += 2)
+                                                                                {
+                                                                                        var tmp = vertex2DRemapper.edgeIndices[ri];
+                                                                                        vertex2DRemapper.edgeIndices[ri] = vertex2DRemapper.edgeIndices[ri + 1];
+                                                                                        vertex2DRemapper.edgeIndices[ri + 1] = tmp;
+                                                                                }
+                                                                                roVerts = vertex2DRemapper.AsReadOnly();
+                                                                                output.Triangles.Clear();
+                                                                                triangulator.Triangulate(
+                                                                                        new andywiecko.BurstTriangulator.LowLevel.Unsafe.InputData<double2>
+                                                                                        {
+                                                                                                Positions = roVerts.positions2D,
+                                                                                                ConstraintEdges = roVerts.edgeIndices
+                                                                                        },
+                                                                                        output,
+                                                                                        settings,
+                                                                                        Allocator.Temp);
+                                                                        }
+                                                                }
 #if UNITY_EDITOR && DEBUG
-								// Inside the loop after calling Triangulate:
-								if (output.Status.Value != Status.OK)
-								{
-									// Log the specific status enum value/name for more detail!
-									Debug.LogError($"Triangulator failed for surface {surf}, loop index {loopIdx} with status {output.Status.Value.ToString()} ({output.Status.Value})");
-								}
-								else if (output.Triangles.Length == 0)
-								{
-									Debug.LogError($"Triangulator returned zero triangles for surface {surf}, loop index {loopIdx}.");
-								}
+                                                                // Inside the loop after calling Triangulate:
+                                                                if (output.Status.Value != Status.OK)
+                                                                {
+                                                                        // Log the specific status enum value/name for more detail!
+                                                                        Debug.LogError($"Triangulator failed for surface {surf}, loop index {loopIdx} with status {output.Status.Value.ToString()} ({output.Status.Value})");
+                                                                }
+                                                                else if (output.Triangles.Length == 0)
+                                                                {
+                                                                        Debug.LogError($"Triangulator returned zero triangles for surface {surf}, loop index {loopIdx}.");
+                                                                }
 #endif
-								if (output.Status.Value != Status.OK || output.Triangles.Length == 0)
-									continue;
+                                                                if (output.Status.Value != Status.OK || output.Triangles.Length == 0)
+                                                                        continue;
 
 								// Map triangles back
 								var prevCount = surfaceIndexList.Length;
@@ -388,10 +414,10 @@ namespace Chisel.Core
 				}
 			}
 		}
-		static bool IsDegenerate(NativeArray<double2> verts)
-		{
-			if (verts.Length < 3)
-				return true;
+                static bool IsDegenerate(NativeArray<double2> verts)
+                {
+                        if (verts.Length < 3)
+                                return true;
 
 			double2 min = verts[0];
 			double2 max = verts[0];
@@ -405,7 +431,74 @@ namespace Chisel.Core
 
 			// A zero-area axis-aligned box means every point sits on a line
 			return math.abs(max.x - min.x) <= double.Epsilon ||
-				   math.abs(max.y - min.y) <= double.Epsilon;
-		}
-	}
+                                   math.abs(max.y - min.y) <= double.Epsilon;
+                }
+
+                static double ComputeSignedArea(NativeArray<double2> verts, NativeArray<int> edges)
+                {
+                        double area = 0;
+                        for (int i = 0; i < edges.Length; i += 2)
+                        {
+                                var a = verts[edges[i]];
+                                var b = verts[edges[i + 1]];
+                                area += (a.x * b.y) - (b.x * a.y);
+                        }
+                        return area * 0.5;
+                }
+
+                static void SortEdges(NativeList<int> edges)
+                {
+                        int edgeCount = edges.Length / 2;
+                        if (edgeCount <= 2)
+                                return;
+
+                        var sorted = new NativeList<int>(edges.Length, Allocator.Temp);
+                        var used   = new NativeArray<bool>(edgeCount, Allocator.Temp);
+
+                        int startA = edges[0];
+                        int startB = edges[1];
+                        sorted.Add(startA);
+                        sorted.Add(startB);
+                        used[0] = true;
+
+                        int current = startB;
+                        for (int e = 1; e < edgeCount; e++)
+                        {
+                                bool found = false;
+                                for (int i = 1; i < edgeCount; i++)
+                                {
+                                        if (used[i])
+                                                continue;
+                                        int a = edges[i * 2 + 0];
+                                        int b = edges[i * 2 + 1];
+                                        if (a == current)
+                                        {
+                                                sorted.Add(a);
+                                                sorted.Add(b);
+                                                current = b;
+                                                used[i] = true;
+                                                found = true;
+                                                break;
+                                        }
+                                        if (b == current)
+                                        {
+                                                sorted.Add(b);
+                                                sorted.Add(a);
+                                                current = a;
+                                                used[i] = true;
+                                                found = true;
+                                                break;
+                                        }
+                                }
+                                if (!found)
+                                        break;
+                        }
+
+                        edges.Clear();
+                        edges.AddRange(sorted.AsArray());
+
+                        sorted.Dispose();
+                        used.Dispose();
+                }
+        }
 }
