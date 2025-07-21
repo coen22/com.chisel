@@ -849,6 +849,7 @@ namespace Chisel.Core
                 // Debug logging of all brush geometry when enabled on the model
                 var modelObj = UnityEngine.Resources.InstanceIDToObject(this.tree.InstanceID);
                 bool debugLogBrushes = false;
+                bool debugLogResult  = false;
                 if (modelObj != null)
                 {
                     var type = modelObj.GetType();
@@ -860,6 +861,15 @@ namespace Chisel.Core
                         var field = type.GetField("DebugLogBrushes", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         if (field != null && field.FieldType == typeof(bool))
                             debugLogBrushes = (bool)field.GetValue(modelObj);
+                    }
+                    prop = type.GetProperty("DebugLogResult", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                    if (prop != null && prop.PropertyType == typeof(bool))
+                        debugLogResult = (bool)prop.GetValue(modelObj);
+                    else
+                    {
+                        field = type.GetField("DebugLogResult", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (field != null && field.FieldType == typeof(bool))
+                            debugLogResult = (bool)field.GetValue(modelObj);
                     }
                 }
                 if (debugLogBrushes)
@@ -2003,9 +2013,21 @@ namespace Chisel.Core
                             ref JobHandles.renderMeshesJobHandle),
                         new WriteJobHandles(ref JobHandles.vertexBufferContents_triangleBrushIndicesJobHandle));
                     }
-					JobHandle.CombineDependencies(jobHandle1, jobHandle2, jobHandle3).Complete();
-				}
-				#endregion
+                    JobHandle.CombineDependencies(jobHandle1, jobHandle2, jobHandle3).Complete();
+                                }
+                                #endregion
+
+                if (debugLogResult)
+                {
+                    var sb2 = new System.Text.StringBuilder();
+                    sb2.AppendLine("Result Mesh Info:");
+                    for (int m = 0; m < Temporaries.vertexBufferContents.meshes.Length; m++)
+                    {
+                        var meshData = Temporaries.vertexBufferContents.meshes[m];
+                        sb2.AppendLine($"Mesh {m} vertices: {meshData.vertexCount} indices: {meshData.indexCount}");
+                    }
+                    UnityEngine.Debug.Log(sb2.ToString());
+                }
 
 
 				// TODO: Create selection meshes that use instanceid colors
