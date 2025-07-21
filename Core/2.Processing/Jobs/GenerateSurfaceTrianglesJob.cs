@@ -250,6 +250,14 @@ namespace Chisel.Core
 
                                                        var roVerts = vertex2DRemapper.AsReadOnly();
 
+                                                       // Ensure consistent winding before triangulation
+                                                       var area = ComputeSignedArea(roVerts.positions2D, roVerts.edgeIndices);
+                                                       if (area < 0)
+                                                       {
+                                                               ReverseEdges(vertex2DRemapper.edgeIndices);
+                                                               roVerts = vertex2DRemapper.AsReadOnly();
+                                                       }
+
 							// Pre-check: need enough points and edges
 							if (roVerts.positions2D.Length < 3 || roVerts.edgeIndices.Length < 3)
 								continue;
@@ -503,6 +511,21 @@ namespace Chisel.Core
                         edges.AddRange(reversed);
 
                         reversed.Dispose();
+                }
+
+                static double ComputeSignedArea(NativeArray<double2> positions, NativeArray<int> edges)
+                {
+                        double area = 0;
+                        int edgeCount = edges.Length / 2;
+                        for (int i = 0; i < edgeCount; i++)
+                        {
+                                int i0 = edges[i * 2 + 0];
+                                int i1 = edges[i * 2 + 1];
+                                var a = positions[i0];
+                                var b = positions[i1];
+                                area += (a.x * b.y) - (b.x * a.y);
+                        }
+                        return area * 0.5;
                 }
         }
 }
