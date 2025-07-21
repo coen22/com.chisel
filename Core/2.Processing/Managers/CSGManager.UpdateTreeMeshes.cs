@@ -2025,9 +2025,16 @@ namespace Chisel.Core
                     sb2.AppendLine("Result Mesh Info:");
                     for (int m = 0; m < Temporaries.vertexBufferContents.meshes.Length; m++)
                     {
-                        var meshData = Temporaries.vertexBufferContents.meshes[m];
-                        var indexCount = meshData.GetIndexData<int>().Length;
+                        var meshData   = Temporaries.vertexBufferContents.meshes[m];
+                        var vertices   = meshData.GetVertexData<Chisel.Core.RenderVertex>();
+                        var indices    = meshData.GetIndexData<int>();
+                        var indexCount = indices.Length;
+
                         sb2.AppendLine($"Mesh {m} vertices: {meshData.vertexCount} indices: {indexCount}");
+                        for (int v = 0; v < meshData.vertexCount; v++)
+                            sb2.AppendLine($"  v{v}: {vertices[v].position}");
+                        for (int t = 0; t < indexCount; t += 3)
+                            sb2.AppendLine($"  tri{t / 3}: {indices[t]}, {indices[t + 1]}, {indices[t + 2]}");
                     }
                     UnityEngine.Debug.Log(sb2.ToString());
                 }
